@@ -4,7 +4,7 @@
 // @version      1.2
 // @description  Auto-fill ESball.ph registration form with specific patterns
 // @author       You
-// @match        https://www.esball.ph/register?r=jym2362*
+// @match        https://www.esball.ph/m/register?r=jym2362*
 // @match        https://www.esball.ph/m/home*
 // @match        https://www.esball.ph/m/myAccount/index*
 // @grant        GM_setValue
