@@ -43,17 +43,12 @@
     let currentTimeout = null; // To track timeouts for cancellation
 
     function generateUsername() {
-        // Select a random 6-letter name
         const firstName = config.sixLetterNames[Math.floor(Math.random() * config.sixLetterNames.length)];
-        
-        // Add 2 random digits (always 2 digits)
         const randomDigits = Math.floor(Math.random() * 90 + 10); // 10-99 (always 2 digits)
-        
         return firstName + randomDigits;
     }
 
     function generateRealName(username) {
-        // Extract the name part from username (remove numbers)
         const namePart = username.replace(/\d+/g, '');
         const lastName = config.lastNames[Math.floor(Math.random() * config.lastNames.length)];
         return namePart + ' ' + lastName;
@@ -92,7 +87,6 @@
         console.log('▶️ Script started manually');
         updateControlButtons();
 
-        // Re-initialize based on current page
         if (isHomePage()) {
             handleHomePage();
         } else if (window.location.href.includes('register')) {
@@ -102,9 +96,13 @@
         }
     }
 
+    // Updated homepage detection
     function isHomePage() {
-        return window.location.href.includes('/m/home') || 
-               window.location.href.includes('home?r=jym2362');
+        const url = window.location.href;
+        return url === 'https://www.esball.ph/m/home' ||
+               url === 'https://www.esball.ph/m/home?r=jym2362' ||
+               url === 'https://www.esball.ph/m/home?r=jym2362&gtagId=G-WT89631CRM' ||
+               url === 'https://www.esball.ph/m/home?r=jym2362&gtagId=';
     }
 
     function toggleScript() {
@@ -119,57 +117,36 @@
         if (!isScriptActive) return;
 
         console.log('🚀 Filling ESball registration form...');
-
-        // Generate username first
         generatedUsername = generateUsername();
         const realName = generateRealName(generatedUsername);
-
-        // Store username for account page
         GM_setValue('esball_username', generatedUsername);
 
-        console.log('📋 Generated data:');
-        console.log('   Username:', generatedUsername);
-        console.log('   Password:', config.password);
-        console.log('   Real Name:', realName);
-
-        // Fill fields with better detection
+        console.log('📋 Generated data:', { Username: generatedUsername, Password: config.password, RealName: realName });
         fillAllFields(generatedUsername, config.password, realName);
     }
 
     function fillAllFields(username, password, realName) {
-        // Try multiple methods to fill fields
         fillFieldsByXPath(username, password, realName);
-
-        // Also try direct DOM selection as backup
         setTimeout(() => fillFieldsByDOM(username, password, realName), 500);
     }
 
     function fillFieldsByXPath(username, password, realName) {
-        // Username
         fillFieldByXPath('//input[@name="username"]', username);
         fillFieldByXPath('//input[@placeholder="Username"]', username);
-
-        // Password
         fillFieldByXPath('//input[@name="password"]', password);
         fillFieldByXPath('//input[@placeholder="Password"]', password);
-
-        // Confirm Password - try multiple variations
         fillFieldByXPath('//input[@name="checkPass"]', password);
         fillFieldByXPath('//input[@name="confirmPassword"]', password);
         fillFieldByXPath('//input[@name="password_confirmation"]', password);
         fillFieldByXPath('//input[@placeholder="Confirm password"]', password);
         fillFieldByXPath('//input[@placeholder="Confirm Password"]', password);
-
-        // Real Name
         fillFieldByXPath('//input[@name="payeeName"]', realName);
         fillFieldByXPath('//input[@placeholder="Real name"]', realName);
         fillFieldByXPath('//input[@placeholder="Real Name"]', realName);
     }
 
     function fillFieldsByDOM(username, password, realName) {
-        // Find all inputs and fill based on attributes
         const inputs = document.querySelectorAll('input');
-
         inputs.forEach(input => {
             const name = input.name.toLowerCase();
             const placeholder = (input.placeholder || '').toLowerCase();
@@ -178,36 +155,29 @@
             if (type === 'password') {
                 input.value = password;
                 triggerEvents(input);
-            }
-            else if (name.includes('user') || placeholder.includes('user')) {
+            } else if (name.includes('user') || placeholder.includes('user')) {
                 input.value = username;
                 triggerEvents(input);
-            }
-            else if (name.includes('check') || name.includes('confirm') ||
-                     placeholder.includes('confirm') || placeholder.includes('check')) {
+            } else if (name.includes('check') || name.includes('confirm') || placeholder.includes('confirm') || placeholder.includes('check')) {
                 input.value = password;
                 triggerEvents(input);
-            }
-            else if (name.includes('payee') || name.includes('real') ||
-                     placeholder.includes('real') || placeholder.includes('name')) {
+            } else if (name.includes('payee') || name.includes('real') || placeholder.includes('real') || placeholder.includes('name')) {
                 input.value = realName;
                 triggerEvents(input);
             }
         });
     }
 
+    // Updated handleHomePage with exact URL redirect
     function handleHomePage() {
         if (!isScriptActive) return;
 
         console.log('🏠 Home page detected, redirecting to account page...');
-
-        // Create status message
         createStatusMessage('🔄 Redirecting to account page in 2 seconds...', '#e67e22');
 
-        // Redirect to account page after 2 seconds
         currentTimeout = setTimeout(() => {
             if (isScriptActive) {
-                window.location.href = 'https://www.esball.ph/m/myAccount/index?r=jym2362';
+                window.location.href = 'https://www.esball.ph/m/myAccount/index';
             }
         }, 2000);
     }
@@ -216,22 +186,15 @@
         if (!isScriptActive) return;
 
         console.log('📊 Account page detected, filling details...');
-
-        // Get stored username or generate new one
         const username = GM_getValue('esball_username', generateUsername());
         const email = generateEmail(username);
         const viber = generateViberNumber();
 
-        console.log('📋 Account details:');
-        console.log('   Username:', username);
-        console.log('   Email:', email);
-        console.log('   Viber:', viber);
+        console.log('📋 Account details:', { Username: username, Email: email, Viber: viber });
 
-        // Fill account fields after a short delay
         currentTimeout = setTimeout(() => {
             if (!isScriptActive) return;
 
-            // Fill email field - try multiple methods
             const emailField = document.querySelector('input[name="email"]') ||
                               document.querySelector('input[placeholder*="email"]') ||
                               document.querySelector('input[placeholder*="Email"]');
@@ -241,7 +204,6 @@
                 console.log('✅ Email field filled');
             }
 
-            // Fill Viber field - try multiple methods
             const viberField = document.querySelector('input[name="viber"]') ||
                                document.querySelector('input[placeholder*="viber"]') ||
                                document.querySelector('input[placeholder*="Viber"]');
@@ -251,7 +213,6 @@
                 console.log('✅ Viber field filled');
             }
 
-            // Click submit button after filling
             currentTimeout = setTimeout(() => {
                 if (isScriptActive) {
                     clickSubmitButton();
@@ -264,9 +225,8 @@
         try {
             const result = document.evaluate(xpath, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null);
             if (result.singleNodeValue) {
-                const field = result.singleNodeValue;
-                field.value = value;
-                triggerEvents(field);
+                result.singleNodeValue.value = value;
+                triggerEvents(result.singleNodeValue);
                 console.log(`✅ Filled field via XPath: ${xpath}`);
                 return true;
             }
@@ -280,9 +240,6 @@
     function clickSubmitButton() {
         if (!isScriptActive) return;
 
-        console.log('🖱️ Looking for submit button...');
-
-        // Try multiple ways to find the submit button
         const buttonSelectors = [
             "a.btn-success.am-button",
             "button[type='submit']",
@@ -291,25 +248,20 @@
         ];
 
         for (const selector of buttonSelectors) {
-            try {
-                const buttons = document.querySelectorAll(selector);
-                for (const button of buttons) {
-                    const buttonText = button.textContent.toLowerCase();
-                    if (buttonText.includes('submit') || button.type === 'submit') {
-                        console.log('✅ Clicking submit button...');
-                        button.click();
-                        stopScript();
-                        return true;
-                    }
+            const buttons = document.querySelectorAll(selector);
+            for (const button of buttons) {
+                const buttonText = button.textContent.toLowerCase();
+                if (buttonText.includes('submit') || button.type === 'submit') {
+                    console.log('✅ Clicking submit button...');
+                    button.click();
+                    stopScript();
+                    return true;
                 }
-            } catch (error) {
-                console.log(`Trying next selector: ${selector}`);
             }
         }
 
-        // Try XPath as fallback
+        const buttonXpath = "//a[contains(@class, 'btn-success') and contains(@class, 'am-button')]";
         try {
-            const buttonXpath = "//a[contains(@class, 'btn-success') and contains(@class, 'am-button')]";
             const button = document.evaluate(buttonXpath, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
             if (button) {
                 console.log('✅ Clicking submit button via XPath...');
@@ -348,25 +300,18 @@
             box-shadow: 0 2px 10px rgba(0,0,0,0.3);
         `;
         document.body.appendChild(status);
-
-        setTimeout(() => {
-            if (status.parentNode) {
-                status.parentNode.removeChild(status);
-            }
-        }, 3000);
+        setTimeout(() => { if (status.parentNode) status.parentNode.removeChild(status); }, 3000);
     }
 
     function updateControlButtons() {
         const toggleBtn = document.getElementById('esball-toggle-btn');
         const autoFillBtn = document.getElementById('esball-auto-fill-btn');
-
         if (toggleBtn) {
             toggleBtn.textContent = isScriptActive ? '⏹️ Stop Script' : '▶️ Start Script';
             toggleBtn.style.background = isScriptActive ?
                 'linear-gradient(45deg, #FF6B6B, #C0392B)' :
                 'linear-gradient(45deg, #4ECDC4, #27ae60)';
         }
-
         if (autoFillBtn) {
             autoFillBtn.style.opacity = isScriptActive ? '1' : '0.5';
             autoFillBtn.style.cursor = isScriptActive ? 'pointer' : 'not-allowed';
@@ -374,7 +319,6 @@
     }
 
     function createControlButtons() {
-        // Remove existing buttons if any
         const oldToggle = document.getElementById('esball-toggle-btn');
         const oldFill = document.getElementById('esball-auto-fill-btn');
         if (oldToggle) oldToggle.remove();
@@ -453,19 +397,12 @@
     function waitForForm() {
         if (!isScriptActive) return;
 
-        const checkField = () => {
-            const hasFields = document.querySelector('input[name="username"], input[placeholder*="Username"], input[placeholder*="username"]');
-            return hasFields !== null;
-        };
+        const checkField = () => document.querySelector('input[name="username"], input[placeholder*="Username"], input[placeholder*="username"]') !== null;
 
         if (checkField()) {
             console.log('✅ Registration form detected');
             createControlButtons();
-            currentTimeout = setTimeout(() => {
-                if (isScriptActive) {
-                    fillESballForm();
-                }
-            }, 1000);
+            currentTimeout = setTimeout(() => { if (isScriptActive) fillESballForm(); }, 1000);
         } else {
             currentTimeout = setTimeout(waitForForm, 1000);
         }
@@ -498,14 +435,10 @@
                 handleAccountPage();
             }
         }
-        if (e.altKey && e.key === 's') {
-            toggleScript();
-        }
+        if (e.altKey && e.key === 's') toggleScript();
     });
 
     console.log('🎯 ESball Auto-Filler loaded!');
-    console.log('📋 Controls:');
-    console.log('   Alt+F - Fill form');
-    console.log('   Alt+S - Toggle start/stop');
-    console.log('💡 Now generating 6-letter names + 2-digit numbers (e.g., Sophia25, Olivia78)');
+    console.log('📋 Controls: Alt+F - Fill form, Alt+S - Toggle start/stop');
+    console.log('💡 Generating 6-letter names + 2-digit numbers (e.g., Sophia25, Olivia78)');
 })();
