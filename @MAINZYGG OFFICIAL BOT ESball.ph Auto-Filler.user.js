@@ -1,11 +1,13 @@
 // ==UserScript==
-// @name         @MAINZYGG OFFICIAL BOT ESball.ph Auto-Filler
+// @name         @MAINZYGG OFFICIAL BOT NOT 4 SALE ESball.ph Auto-Filler
 // @namespace    http://tampermonkey.net/
-// @version      1.2
+// @version      1.5
 // @description  Auto-fill ESball.ph registration form with specific patterns
 // @author       You
 // @match        https://www.esball.ph/m/register?r=jym2362*
 // @match        https://www.esball.ph/m/home*
+// @match        https://www.esball.ph/m/home?r=jym2362*
+// @match        https://www.esball.ph/m/home?r=jym2362&gtagId=*
 // @match        https://www.esball.ph/m/myAccount/index*
 // @grant        GM_setValue
 // @grant        GM_getValue
@@ -14,12 +16,23 @@
 (function() {
     'use strict';
 
-    // Configuration - Customize these arrays if needed
+    // Configuration - 100+ different 6-letter names
     const config = {
         password: 'Mainzy25', // Fixed password as requested
-        firstNames: ['Leah', 'Sarah', 'Anna', 'Emma', 'Mia', 'Luna', 'Chloe', 'Zoe', 'Ruby', 'Ella'],
+        sixLetterNames: [
+            'Sophia', 'Olivia', 'Emma', 'Ava', 'Isabella', 'Mia', 'Zoe', 'Lily', 'Emily', 'Chloe',
+            'Layla', 'Madison', 'Grace', 'Zoey', 'Nora', 'Hannah', 'Lily', 'Avery', 'Ella', 'Scarlett',
+            'Aria', 'Riley', 'Amelia', 'Nova', 'Addison', 'Luna', 'Brook', 'Bella', 'Lucy', 'Paisley',
+            'Everly', 'Skylar', 'Ellie', 'Natalie', 'Leah', 'Hazel', 'Violet', 'Aurora', 'Savannah', 'Audrey',
+            'Brooklyn', 'Bella', 'Claire', 'Anna', 'Kinsley', 'Allison', 'Samantha', 'Natalia', 'Sarah', 'Camila',
+            'Genesis', 'Kennedy', 'Sadie', 'Aaliyah', 'Gabriel', 'Elena', 'Naomi', 'Alice', 'Sara', 'Ruby',
+            'Emery', 'Lydia', 'Clara', 'Vivian', 'Reagan', 'Mackenzie', 'Madelyn', 'Katherine', 'Kaylee', 'Sophie',
+            'Alexis', 'Haley', 'Taylor', 'Ashley', 'Brianna', 'Charlotte', 'Rebecca', 'Teagan', 'Dakota', 'Maya',
+            'Melanie', 'Gianna', 'Alexa', 'Kylie', 'Cora', 'Julia', 'Kaitlyn', 'Faith', 'Alexandra', 'Jasmine',
+            'Ariana', 'Isabelle', 'Morgan', 'Eva', 'Kimberly', 'Lauren', 'Bailey', 'Jennifer', 'Makayla', 'Lilly',
+            'Jenna', 'Destiny', 'Amy', 'Paige', 'Maria', 'Brooke', 'Mckenzie', 'Nicole', 'Trinity', 'Kendall'
+        ],
         lastNames: ['Durban', 'Smith', 'Johnson', 'Brown', 'Davis', 'Wilson', 'Taylor', 'Clark', 'Lewis', 'Lee'],
-        numberRange: [10, 99], // Random numbers will be between 10-99
         emailDomains: ['@yahoo1.com', '@gmail1.com', '@hotmail1.com', '@outlook1.com', '@mail1.com'],
         viberLength: { min: 6, max: 10 }
     };
@@ -30,9 +43,13 @@
     let currentTimeout = null; // To track timeouts for cancellation
 
     function generateUsername() {
-        const firstName = config.firstNames[Math.floor(Math.random() * config.firstNames.length)];
-        const randomNum = Math.floor(Math.random() * (config.numberRange[1] - config.numberRange[0] + 1)) + config.numberRange[0];
-        return firstName + randomNum;
+        // Select a random 6-letter name
+        const firstName = config.sixLetterNames[Math.floor(Math.random() * config.sixLetterNames.length)];
+        
+        // Add 2 random digits (always 2 digits)
+        const randomDigits = Math.floor(Math.random() * 90 + 10); // 10-99 (always 2 digits)
+        
+        return firstName + randomDigits;
     }
 
     function generateRealName(username) {
@@ -76,13 +93,18 @@
         updateControlButtons();
 
         // Re-initialize based on current page
-        if (window.location.href.includes('register')) {
-            waitForForm();
-        } else if (window.location.href.includes('/m/home')) {
+        if (isHomePage()) {
             handleHomePage();
+        } else if (window.location.href.includes('register')) {
+            waitForForm();
         } else if (window.location.href.includes('/m/myAccount/index')) {
             handleAccountPage();
         }
+    }
+
+    function isHomePage() {
+        return window.location.href.includes('/m/home') || 
+               window.location.href.includes('home?r=jym2362');
     }
 
     function toggleScript() {
@@ -105,17 +127,73 @@
         // Store username for account page
         GM_setValue('esball_username', generatedUsername);
 
-        // Fill the specific fields using XPath patterns
-        fillFieldByXPath('//input[@placeholder="Username"][@name="username"]', generatedUsername);
-        fillFieldByXPath('//input[@name="password"][@placeholder="Password"]', config.password);
-        fillFieldByXPath('//input[@name="checkPass"][@placeholder="Confirm password"]', config.password);
-        fillFieldByXPath('//input[@name="payeeName"][@placeholder="Real name"]', realName);
-
-        console.log('✅ Form filled successfully!');
         console.log('📋 Generated data:');
         console.log('   Username:', generatedUsername);
         console.log('   Password:', config.password);
         console.log('   Real Name:', realName);
+
+        // Fill fields with better detection
+        fillAllFields(generatedUsername, config.password, realName);
+    }
+
+    function fillAllFields(username, password, realName) {
+        // Try multiple methods to fill fields
+        fillFieldsByXPath(username, password, realName);
+
+        // Also try direct DOM selection as backup
+        setTimeout(() => fillFieldsByDOM(username, password, realName), 500);
+    }
+
+    function fillFieldsByXPath(username, password, realName) {
+        // Username
+        fillFieldByXPath('//input[@name="username"]', username);
+        fillFieldByXPath('//input[@placeholder="Username"]', username);
+
+        // Password
+        fillFieldByXPath('//input[@name="password"]', password);
+        fillFieldByXPath('//input[@placeholder="Password"]', password);
+
+        // Confirm Password - try multiple variations
+        fillFieldByXPath('//input[@name="checkPass"]', password);
+        fillFieldByXPath('//input[@name="confirmPassword"]', password);
+        fillFieldByXPath('//input[@name="password_confirmation"]', password);
+        fillFieldByXPath('//input[@placeholder="Confirm password"]', password);
+        fillFieldByXPath('//input[@placeholder="Confirm Password"]', password);
+
+        // Real Name
+        fillFieldByXPath('//input[@name="payeeName"]', realName);
+        fillFieldByXPath('//input[@placeholder="Real name"]', realName);
+        fillFieldByXPath('//input[@placeholder="Real Name"]', realName);
+    }
+
+    function fillFieldsByDOM(username, password, realName) {
+        // Find all inputs and fill based on attributes
+        const inputs = document.querySelectorAll('input');
+
+        inputs.forEach(input => {
+            const name = input.name.toLowerCase();
+            const placeholder = (input.placeholder || '').toLowerCase();
+            const type = input.type;
+
+            if (type === 'password') {
+                input.value = password;
+                triggerEvents(input);
+            }
+            else if (name.includes('user') || placeholder.includes('user')) {
+                input.value = username;
+                triggerEvents(input);
+            }
+            else if (name.includes('check') || name.includes('confirm') ||
+                     placeholder.includes('confirm') || placeholder.includes('check')) {
+                input.value = password;
+                triggerEvents(input);
+            }
+            else if (name.includes('payee') || name.includes('real') ||
+                     placeholder.includes('real') || placeholder.includes('name')) {
+                input.value = realName;
+                triggerEvents(input);
+            }
+        });
     }
 
     function handleHomePage() {
@@ -153,16 +231,20 @@
         currentTimeout = setTimeout(() => {
             if (!isScriptActive) return;
 
-            // Fill email field
-            const emailField = findInputByAttributes('email', 'Please enter your email');
+            // Fill email field - try multiple methods
+            const emailField = document.querySelector('input[name="email"]') ||
+                              document.querySelector('input[placeholder*="email"]') ||
+                              document.querySelector('input[placeholder*="Email"]');
             if (emailField) {
                 emailField.value = email;
                 triggerEvents(emailField);
                 console.log('✅ Email field filled');
             }
 
-            // Fill Viber field
-            const viberField = findInputByAttributes('viber', 'Viber');
+            // Fill Viber field - try multiple methods
+            const viberField = document.querySelector('input[name="viber"]') ||
+                               document.querySelector('input[placeholder*="viber"]') ||
+                               document.querySelector('input[placeholder*="Viber"]');
             if (viberField) {
                 viberField.value = viber;
                 triggerEvents(viberField);
@@ -178,14 +260,20 @@
         }, 1500);
     }
 
-    function findInputByAttributes(name, placeholder) {
-        const xpath = `//input[@name="${name}"][contains(@placeholder, "${placeholder}")]`;
+    function fillFieldByXPath(xpath, value) {
         try {
             const result = document.evaluate(xpath, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null);
-            return result.singleNodeValue;
+            if (result.singleNodeValue) {
+                const field = result.singleNodeValue;
+                field.value = value;
+                triggerEvents(field);
+                console.log(`✅ Filled field via XPath: ${xpath}`);
+                return true;
+            }
+            return false;
         } catch (error) {
-            console.error('XPath error:', error);
-            return null;
+            console.error('Error with XPath:', xpath, error);
+            return false;
         }
     }
 
@@ -194,44 +282,47 @@
 
         console.log('🖱️ Looking for submit button...');
 
-        // Try to find the submit button
-        const buttonXpath = "//a[contains(@class, 'btn-success') and contains(@class, 'am-button')]";
+        // Try multiple ways to find the submit button
+        const buttonSelectors = [
+            "a.btn-success.am-button",
+            "button[type='submit']",
+            "input[type='submit']",
+            "a[role='button']"
+        ];
+
+        for (const selector of buttonSelectors) {
+            try {
+                const buttons = document.querySelectorAll(selector);
+                for (const button of buttons) {
+                    const buttonText = button.textContent.toLowerCase();
+                    if (buttonText.includes('submit') || button.type === 'submit') {
+                        console.log('✅ Clicking submit button...');
+                        button.click();
+                        stopScript();
+                        return true;
+                    }
+                }
+            } catch (error) {
+                console.log(`Trying next selector: ${selector}`);
+            }
+        }
+
+        // Try XPath as fallback
         try {
+            const buttonXpath = "//a[contains(@class, 'btn-success') and contains(@class, 'am-button')]";
             const button = document.evaluate(buttonXpath, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
-            if (button && button.textContent.includes('Submit')) {
-                console.log('✅ Clicking submit button...');
+            if (button) {
+                console.log('✅ Clicking submit button via XPath...');
                 button.click();
-                // Stop script after successful submission
                 stopScript();
                 return true;
             }
         } catch (error) {
-            console.error('Error finding submit button:', error);
+            console.error('XPath button error:', error);
         }
 
         console.log('❌ Submit button not found');
         return false;
-    }
-
-    function fillFieldByXPath(xpath, value) {
-        try {
-            const result = document.evaluate(xpath, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null);
-            if (result.singleNodeValue) {
-                const field = result.singleNodeValue;
-                field.value = value;
-
-                // Trigger necessary events
-                field.dispatchEvent(new Event('input', { bubbles: true }));
-                field.dispatchEvent(new Event('change', { bubbles: true }));
-                field.dispatchEvent(new Event('blur', { bubbles: true }));
-
-                return true;
-            }
-            return false;
-        } catch (error) {
-            console.error('Error with XPath:', xpath, error);
-            return false;
-        }
     }
 
     function triggerEvents(element) {
@@ -258,7 +349,6 @@
         `;
         document.body.appendChild(status);
 
-        // Remove after 3 seconds
         setTimeout(() => {
             if (status.parentNode) {
                 status.parentNode.removeChild(status);
@@ -290,7 +380,6 @@
         if (oldToggle) oldToggle.remove();
         if (oldFill) oldFill.remove();
 
-        // Create toggle button
         const toggleBtn = document.createElement('button');
         toggleBtn.id = 'esball-toggle-btn';
         toggleBtn.textContent = isScriptActive ? '⏹️ Stop Script' : '▶️ Start Script';
@@ -298,7 +387,7 @@
             position: fixed;
             top: 20px;
             right: 20px;
-            background: linear-gradient(45deg, #FF6B6B, #C0392B);
+            background: ${isScriptActive ? 'linear-gradient(45deg, #FF6B6B, #C0392B)' : 'linear-gradient(45deg, #4ECDC4, #27ae60)'};
             color: white;
             border: none;
             padding: 12px 20px;
@@ -311,7 +400,6 @@
             transition: all 0.3s ease;
         `;
 
-        // Create auto-fill button
         const autoFillBtn = document.createElement('button');
         autoFillBtn.id = 'esball-auto-fill-btn';
         autoFillBtn.textContent = window.location.href.includes('register') ?
@@ -333,7 +421,6 @@
             transition: all 0.3s ease;
         `;
 
-        // Add event listeners
         toggleBtn.addEventListener('click', toggleScript);
         autoFillBtn.addEventListener('click', () => {
             if (isScriptActive) {
@@ -345,7 +432,6 @@
             }
         });
 
-        // Add hover effects
         [toggleBtn, autoFillBtn].forEach(btn => {
             btn.addEventListener('mouseenter', () => {
                 if (isScriptActive || btn.id === 'esball-toggle-btn') {
@@ -359,39 +445,28 @@
             });
         });
 
-        // Add to document
         document.body.appendChild(toggleBtn);
         document.body.appendChild(autoFillBtn);
-
-        // Update initial state
         updateControlButtons();
     }
 
     function waitForForm() {
         if (!isScriptActive) return;
 
-        // Check if form fields are available
         const checkField = () => {
-            try {
-                const result = document.evaluate('//input[@placeholder="Username"][@name="username"]', document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null);
-                return result.singleNodeValue !== null;
-            } catch (error) {
-                return false;
-            }
+            const hasFields = document.querySelector('input[name="username"], input[placeholder*="Username"], input[placeholder*="username"]');
+            return hasFields !== null;
         };
 
         if (checkField()) {
             console.log('✅ Registration form detected');
             createControlButtons();
-
-            // Optional: Auto-fill after a short delay
             currentTimeout = setTimeout(() => {
                 if (isScriptActive) {
                     fillESballForm();
                 }
             }, 1000);
         } else {
-            // Retry every second until form is loaded
             currentTimeout = setTimeout(waitForForm, 1000);
         }
     }
@@ -402,21 +477,19 @@
 
         if (window.location.href.includes('register')) {
             waitForForm();
-        } else if (window.location.href.includes('/m/home')) {
+        } else if (isHomePage()) {
             handleHomePage();
         } else if (window.location.href.includes('/m/myAccount/index')) {
             handleAccountPage();
         }
     }
 
-    // Initialize when page loads
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', init);
     } else {
         init();
     }
 
-    // Add keyboard shortcut (Alt + F for fill, Alt + S for stop/start)
     document.addEventListener('keydown', function(e) {
         if (e.altKey && e.key === 'f' && isScriptActive) {
             if (window.location.href.includes('register')) {
@@ -434,5 +507,5 @@
     console.log('📋 Controls:');
     console.log('   Alt+F - Fill form');
     console.log('   Alt+S - Toggle start/stop');
-    console.log('   Buttons - Top-right corner');
+    console.log('💡 Now generating 6-letter names + 2-digit numbers (e.g., Sophia25, Olivia78)');
 })();
