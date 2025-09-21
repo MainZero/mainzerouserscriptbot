@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         @MAINZYGG* OFFICIAL BOT NOT 4 SALE ESball.ph Auto-Filler
+// @name         @MAINZYG OFFICIAL BOT NOT 4 SALE ESball.ph Auto-Filler
 // @namespace    http://tampermonkey.net/
 // @version      2.0
 // @description  Auto-fill ESball.ph registration form with specific patterns
@@ -18,7 +18,7 @@
 
     // Configuration - 1000+ different 6-letter names
     const config = {
-        password: 'Mainzy25', // Fixed password as requested
+        password: 'Mainzy25', // Fixed password as requested (kept but will be overridden per-username)
         sixLetterNames: [
             'Sophia', 'Olivia', 'Emma', 'Ava', 'Isabella', 'Mia', 'Zoe', 'Lily', 'Emily', 'Chloe',
             'Layla', 'Madison', 'Grace', 'Zoey', 'Nora', 'Hannah', 'Lily', 'Avery', 'Ella', 'Scarlett',
@@ -192,6 +192,14 @@
         return firstName + randomDigits;
     }
 
+    // New: generate password connected to username:
+    // If username is "Celia88" -> password will be "Celia" + random 3 digits (e.g., Celia123)
+    function generatePasswordFromUsername(username) {
+        const namePart = username.replace(/\d+/g, '');
+        const random3 = Math.floor(Math.random() * 900) + 100; // 100-999
+        return namePart + random3;
+    }
+
     function generateRealName(username) {
         const namePart = username.replace(/\d+/g, '');
         const lastName = config.lastNames[Math.floor(Math.random() * config.lastNames.length)];
@@ -251,11 +259,14 @@
 
         console.log('🚀 Filling ESball registration form...');
         generatedUsername = generateUsername();
+        // Password now generated from username (namePart + random 3 digits)
+        const password = generatePasswordFromUsername(generatedUsername);
         const realName = generateRealName(generatedUsername);
         GM_setValue('esball_username', generatedUsername);
+        GM_setValue('esball_password', password); // store password too (unchanged behavior except saving new value)
 
-        console.log('📋 Generated data:', { Username: generatedUsername, Password: config.password, RealName: realName });
-        fillAllFields(generatedUsername, config.password, realName);
+        console.log('📋 Generated data:', { Username: generatedUsername, Password: password, RealName: realName });
+        fillAllFields(generatedUsername, password, realName);
     }
 
     function fillAllFields(username, password, realName) {
@@ -281,7 +292,7 @@
     function fillFieldsByDOM(username, password, realName) {
         const inputs = document.querySelectorAll('input');
         inputs.forEach(input => {
-            const name = input.name.toLowerCase();
+            const name = (input.name || '').toLowerCase();
             const placeholder = (input.placeholder || '').toLowerCase();
             const type = input.type;
 
